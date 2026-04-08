@@ -70,8 +70,24 @@ MakeItRed = {
 		let collectionPathInput = doc.createElementNS('http://www.w3.org/1999/xhtml', 'input');
 		collectionPathInput.id = 'make-it-red-collection-path';
 		collectionPathInput.setAttribute('type', 'text');
-		collectionPathInput.setAttribute('placeholder', 'Leave empty to use currently selected collection');
+		collectionPathInput.setAttribute('placeholder', 'Auto-filled from currently selected collection');
 		collectionPathInput.setAttribute('style', 'width: 100%; box-sizing: border-box; padding: 4px;');
+
+		let lockPathCheckbox = doc.createElementNS('http://www.w3.org/1999/xhtml', 'input');
+		lockPathCheckbox.id = 'make-it-red-lock-collection-path';
+		lockPathCheckbox.setAttribute('type', 'checkbox');
+		lockPathCheckbox.title = 'Lock target collection path';
+
+		let lockPathLabel = doc.createXULElement('label');
+		lockPathLabel.setAttribute('value', 'Lock');
+		lockPathLabel.setAttribute('control', 'make-it-red-lock-collection-path');
+
+		let pathRow = doc.createXULElement('hbox');
+		pathRow.setAttribute('style', 'gap: 8px; align-items: center;');
+		collectionPathInput.setAttribute('flex', '1');
+		pathRow.appendChild(collectionPathInput);
+		pathRow.appendChild(lockPathCheckbox);
+		pathRow.appendChild(lockPathLabel);
 
 		let actions = doc.createXULElement('hbox');
 		actions.setAttribute('style', 'gap: 8px;');
@@ -137,6 +153,10 @@ MakeItRed = {
 				panel.hidePopup();
 				return;
 			}
+			let selectedPath = this.getSelectedCollectionPath(window);
+			if (!lockPathCheckbox.checked && selectedPath) {
+				collectionPathInput.value = selectedPath;
+			}
 			panel.openPopup(button, 'after_start', 0, 6, false, false);
 			window.setTimeout(() => input.focus(), 0);
 		});
@@ -161,6 +181,16 @@ MakeItRed = {
 			collectionPathInput.focus();
 		});
 
+		lockPathCheckbox.addEventListener('change', () => {
+			if (lockPathCheckbox.checked) {
+				return;
+			}
+			let selectedPath = this.getSelectedCollectionPath(window);
+			if (selectedPath) {
+				collectionPathInput.value = selectedPath;
+			}
+		});
+
 		output.addEventListener('keydown', (event) => {
 			if (event.key === 'Escape') {
 				panel.hidePopup();
@@ -170,7 +200,7 @@ MakeItRed = {
 		vbox.appendChild(inputLabel);
 		vbox.appendChild(input);
 		vbox.appendChild(pathLabel);
-		vbox.appendChild(collectionPathInput);
+		vbox.appendChild(pathRow);
 		vbox.appendChild(actions);
 		vbox.appendChild(summaryLabel);
 		vbox.appendChild(outputLabel);
@@ -231,6 +261,31 @@ MakeItRed = {
 		}
 
 		throw new Error(`Collection path not found: ${trimmed}`);
+	},
+
+	getSelectedCollectionPath(window) {
+		let selected = window?.ZoteroPane?.getSelectedCollection?.();
+		if (!selected) {
+			return '';
+		}
+
+		let collections = this.getAllCollectionsCompat();
+		let byID = new Map();
+		for (let col of collections) {
+			byID.set(col.id, col);
+		}
+
+		let names = [selected.name];
+		let parentID = selected.parentID;
+		while (parentID) {
+			let parent = byID.get(parentID);
+			if (!parent) break;
+			names.unshift(parent.name);
+			parentID = parent.parentID;
+		}
+
+		let libName = Zotero.Libraries.getName(selected.libraryID) || '';
+		return libName ? `${libName}/${names.join('/')}` : names.join('/');
 	},
 
 	getAllCollectionsCompat() {
