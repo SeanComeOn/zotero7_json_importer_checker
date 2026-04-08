@@ -316,7 +316,7 @@ MakeItRed = {
 					continue;
 				}
 
-				await targetCollection.addItem(item.id);
+				await this.addItemToCollection(targetCollection, item.id);
 				rows.push({
 					index,
 					success: true,
@@ -341,26 +341,58 @@ MakeItRed = {
 		return rows;
 	},
 
+	async addItemToCollection(collection, itemID) {
+		if (!collection || itemID == null) {
+			throw new Error('Invalid collection or item');
+		}
+
+		if (typeof collection.hasItem === 'function' && collection.hasItem(itemID)) {
+			return;
+		}
+
+		if (typeof Zotero.DB?.executeTransaction === 'function') {
+			await Zotero.DB.executeTransaction(async () => {
+				await collection.addItem(itemID);
+			});
+			return;
+		}
+
+		await collection.addItem(itemID);
+	},
+
 	async findOrCreateByDOI(doi, libraryID) {
 		let existing = await this.findExistingByDOI(doi, libraryID);
 		if (existing) return existing;
 
-		let translate = new Zotero.Translate.Search();
-		translate.setIdentifier({ DOI: doi });
-		let translators = await translate.getTranslators();
-		if (!translators || !translators.length) {
-			return null;
+		let forms = [
+			doi,
+			`doi:${doi}`,
+			{ DOI: doi }
+		];
+
+		for (let form of forms) {
+			let translate = new Zotero.Translate.Search();
+			try {
+				translate.setIdentifier(form);
+				let translators = await translate.getTranslators();
+				if (!translators || !translators.length) {
+					continue;
+				}
+
+				translate.setTranslator(translators);
+				await translate.translate({ libraryID });
+			}
+			catch (e) {
+				this.log(`Translate failed for DOI ${doi} with form ${JSON.stringify(form)}: ${e}`);
+			}
+
+			existing = await this.findExistingByDOI(doi, libraryID);
+			if (existing) {
+				return existing;
+			}
 		}
 
-		translate.setTranslator(translators);
-		try {
-			await translate.translate({ libraryID });
-		}
-		catch (e) {
-			this.log(`Translate failed for DOI ${doi}: ${e}`);
-		}
-
-		return await this.findExistingByDOI(doi, libraryID);
+		return null;
 	},
 
 	async findExistingByDOI(doi, libraryID) {
