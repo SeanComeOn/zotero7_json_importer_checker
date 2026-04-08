@@ -37,10 +37,10 @@ MakeItRed = {
 		panel.id = 'make-it-red-json-panel';
 		panel.setAttribute('type', 'arrow');
 		panel.setAttribute('orient', 'vertical');
-		panel.setAttribute('style', 'padding: 10px; width: 760px; max-height: 620px;');
+		panel.setAttribute('style', 'padding: 15px; width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-sizing: border-box;');
 
 		let vbox = doc.createXULElement('vbox');
-		vbox.setAttribute('style', 'gap: 8px;');
+		vbox.setAttribute('style', 'gap: 10px; flex: 1; display: flex; flex-direction: column; overflow: hidden;');
 		vbox.setAttribute('flex', '1');
 
 		let inputLabel = doc.createXULElement('label');
@@ -48,8 +48,8 @@ MakeItRed = {
 
 		let input = doc.createElementNS('http://www.w3.org/1999/xhtml', 'textarea');
 		input.id = 'make-it-red-json-input';
-		input.setAttribute('rows', '8');
-		input.setAttribute('style', 'width: 740px; font-family: monospace;');
+		input.setAttribute('rows', '5');
+		input.setAttribute('style', 'width: 100%; box-sizing: border-box; font-family: monospace; resize: vertical; min-height: 80px;');
 
 		let pathLabel = doc.createXULElement('label');
 		pathLabel.setAttribute('value', 'Target collection path (example: My Library/Robot/Locomotion):');
@@ -58,7 +58,7 @@ MakeItRed = {
 		collectionPathInput.id = 'make-it-red-collection-path';
 		collectionPathInput.setAttribute('type', 'text');
 		collectionPathInput.setAttribute('placeholder', 'Leave empty to use currently selected collection');
-		collectionPathInput.setAttribute('style', 'width: 740px; box-sizing: border-box;');
+		collectionPathInput.setAttribute('style', 'width: 100%; box-sizing: border-box; padding: 4px;');
 
 		let actions = doc.createXULElement('hbox');
 		actions.setAttribute('style', 'gap: 8px;');
@@ -81,13 +81,11 @@ MakeItRed = {
 		summaryLabel.setAttribute('value', 'Ready.');
 
 		let outputLabel = doc.createXULElement('label');
-		outputLabel.setAttribute('value', 'Validation list (status | found title | JSON title | DOI):');
+		outputLabel.setAttribute('value', 'Validation list (Table view):');
 
-		let output = doc.createElementNS('http://www.w3.org/1999/xhtml', 'textarea');
+		let output = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
 		output.id = 'make-it-red-json-output';
-		output.setAttribute('rows', '10');
-		output.setAttribute('readonly', 'readonly');
-		output.setAttribute('style', 'width: 740px; font-family: monospace;');
+		output.setAttribute('style', 'width: 100%; flex: 1; min-height: 200px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;');
 
 		importButton.addEventListener('command', async () => {
 			importButton.disabled = true;
@@ -96,12 +94,12 @@ MakeItRed = {
 			try {
 				let targetCollection = this.resolveTargetCollection(window, collectionPathInput.value || '');
 				let rows = await this.importFromJSONString(window, input.value ?? '', targetCollection);
-				output.value = this.formatRows(rows);
+				output.innerHTML = this.formatRowsToTable(rows);
 				let successCount = rows.filter(row => row.success).length;
 				summaryLabel.setAttribute('value', `Done: ${successCount}/${rows.length} succeeded.`);
 			}
 			catch (e) {
-				output.value = `ERROR: ${e.message}`;
+				output.innerHTML = `<div style="color: red; padding: 15px; font-weight: bold;">ERROR: ${this.escapeHTML(e.message || String(e))}</div>`;
 				summaryLabel.setAttribute('value', 'Failed.');
 				this.log(`Import failed: ${e}`);
 			}
@@ -113,7 +111,7 @@ MakeItRed = {
 
 		clearButton.addEventListener('command', () => {
 			input.value = '';
-			output.value = '';
+			output.innerHTML = '';
 			summaryLabel.setAttribute('value', 'Ready.');
 		});
 
@@ -454,12 +452,66 @@ MakeItRed = {
 		return Zotero.Items.get(itemIDs[0]);
 	},
 
-	formatRows(rows) {
-		return rows.map((row) => {
-			let status = row.success ? 'OK' : 'FAIL';
-			let reason = row.error ? ` | reason: ${row.error}` : '';
-			return `${status} | found: ${row.foundTitle || '(none)'} | json: ${row.jsonTitle || '(none)'} | doi: ${row.doi || '(none)'}${reason}`;
-		}).join('\n');
+	escapeHTML(value) {
+		return String(value ?? '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	},
+
+	formatRowsToTable(rows) {
+		let html = `
+		<table style="width: 100%; border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13px;">
+			<thead style="position: sticky; top: 0; background-color: #eaeaea; box-shadow: 0 1px 2px rgba(0,0,0,0.1); z-index: 1;">
+				<tr>
+					<th style="padding: 8px; border: 1px solid #ccc; text-align: left; width: 10%;">状态</th>
+					<th style="padding: 8px; border: 1px solid #ccc; text-align: left; width: 15%;">DOI</th>
+					<th style="padding: 8px; border: 1px solid #ccc; text-align: left; width: 30%;">实际抓取标题 (Zotero)</th>
+					<th style="padding: 8px; border: 1px solid #ccc; text-align: left; width: 30%;">输入标题 (JSON)</th>
+					<th style="padding: 8px; border: 1px solid #ccc; text-align: center; width: 15%;">对比结果</th>
+				</tr>
+			</thead>
+			<tbody>
+		`;
+
+		for (let row of rows) {
+			let statusColor = row.success ? '#2e7d32' : '#d32f2f';
+			let statusText = row.success ? '成功' : '失败';
+			let reason = row.error
+				? `<br/><span style="color: #d32f2f; font-size: 11px; font-weight: normal;">${this.escapeHTML(row.error)}</span>`
+				: '';
+
+			let matchResult = '';
+			if (row.success) {
+				let cleanFound = (row.foundTitle || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+				let cleanJson = (row.jsonTitle || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+				if (cleanFound !== '' && cleanFound === cleanJson) {
+					matchResult = '<span style="color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 3px 6px; border-radius: 4px;">标题匹配</span>';
+				}
+				else {
+					matchResult = '<span style="color: #d32f2f; font-weight: bold; background: #ffebee; padding: 3px 6px; border-radius: 4px;">不匹配<br/><span style="font-size: 11px; font-weight: normal;">(疑似幻觉)</span></span>';
+				}
+			}
+			else {
+				matchResult = '<span style="color: #999;">-</span>';
+			}
+
+			html += `
+				<tr style="background-color: #fff; border-bottom: 1px solid #eee;">
+					<td style="padding: 8px; border: 1px solid #eee; color: ${statusColor}; font-weight: bold; vertical-align: top;">${statusText}${reason}</td>
+					<td style="padding: 8px; border: 1px solid #eee; word-break: break-all; vertical-align: top;">${this.escapeHTML(row.doi || '-')}</td>
+					<td style="padding: 8px; border: 1px solid #eee; vertical-align: top; color: #333;">${this.escapeHTML(row.foundTitle || '-')}</td>
+					<td style="padding: 8px; border: 1px solid #eee; vertical-align: top; color: #666;">${this.escapeHTML(row.jsonTitle || '-')}</td>
+					<td style="padding: 8px; border: 1px solid #eee; text-align: center; vertical-align: middle;">${matchResult}</td>
+				</tr>
+			`;
+		}
+
+		html += `</tbody></table>`;
+		return html;
 	},
 
 	addToAllWindows() {
