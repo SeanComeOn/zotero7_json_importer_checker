@@ -25,11 +25,24 @@ MakeItRed = {
 			return;
 		}
 
+		// 动态注入一段 CSS，强制限制我们按钮内部的图标尺寸
+		let style = doc.createElementNS('http://www.w3.org/1999/xhtml', 'style');
+		style.id = 'make-it-red-json-toolbar-button-style';
+		style.textContent = `
+			#make-it-red-json-toolbar-button .toolbarbutton-icon {
+				width: 16px !important;
+				height: 16px !important;
+			}
+		`;
+		doc.documentElement.appendChild(style);
+		this.storeAddedElement(style); // 确保插件卸载时能自动清理这段 CSS
+
 		let button = doc.createXULElement('toolbarbutton');
 		button.id = 'make-it-red-json-toolbar-button';
 		button.setAttribute('label', 'JSON Echo');
 		button.setAttribute('tooltiptext', 'Open JSON echo panel');
 		button.setAttribute('class', 'toolbarbutton-1');
+		button.setAttribute('image', this.rootURI + 'icon.png');
 		toolbar.appendChild(button);
 		this.storeAddedElement(button);
 
