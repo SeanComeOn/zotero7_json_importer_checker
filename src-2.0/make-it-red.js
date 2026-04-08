@@ -4,6 +4,7 @@ MakeItRed = {
 	rootURI: null,
 	initialized: false,
 	addedElementIDs: [],
+	lastExportPath: '', // 记忆上一次指定的导出文件夹路径
 
 	init({ id, version, rootURI }) {
 		if (this.initialized) return;
@@ -25,18 +26,32 @@ MakeItRed = {
 			return;
 		}
 
-		// 动态注入一段 CSS，强制限制我们按钮内部的图标尺寸
 		let style = doc.createElementNS('http://www.w3.org/1999/xhtml', 'style');
 		style.id = 'make-it-red-json-toolbar-button-style';
 		style.textContent = `
-			#make-it-red-json-toolbar-button .toolbarbutton-icon {
+			#make-it-red-json-toolbar-button .toolbarbutton-icon,
+			#make-it-red-export-toolbar-button .toolbarbutton-icon {
 				width: 16px !important;
 				height: 16px !important;
 			}
+			.make-it-red-html-btn {
+				padding: 4px 10px;
+				cursor: pointer;
+				background-color: #f0f0f0;
+				border: 1px solid #ccc;
+				border-radius: 4px;
+				font-family: inherit;
+			}
+			.make-it-red-html-btn:hover {
+				background-color: #e0e0e0;
+			}
 		`;
 		doc.documentElement.appendChild(style);
-		this.storeAddedElement(style); // 确保插件卸载时能自动清理这段 CSS
+		this.storeAddedElement(style);
 
+		// ==========================================
+		// 1. 原有的 JSON 导入功能区
+		// ==========================================
 		let button = doc.createXULElement('toolbarbutton');
 		button.id = 'make-it-red-json-toolbar-button';
 		button.setAttribute('label', 'JSON Echo');
@@ -92,14 +107,17 @@ MakeItRed = {
 		let actions = doc.createXULElement('hbox');
 		actions.setAttribute('style', 'gap: 8px;');
 
-		let importButton = doc.createXULElement('button');
-		importButton.setAttribute('label', 'Import by DOI');
+		let importButton = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
+		importButton.className = 'make-it-red-html-btn';
+		importButton.textContent = 'Import by DOI';
 
-		let clearButton = doc.createXULElement('button');
-		clearButton.setAttribute('label', 'Clear');
+		let clearButton = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
+		clearButton.className = 'make-it-red-html-btn';
+		clearButton.textContent = 'Clear';
 
-		let closeButton = doc.createXULElement('button');
-		closeButton.setAttribute('label', 'Close');
+		let closeButton = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
+		closeButton.className = 'make-it-red-html-btn';
+		closeButton.textContent = 'Close';
 
 		actions.appendChild(importButton);
 		actions.appendChild(clearButton);
@@ -116,7 +134,7 @@ MakeItRed = {
 		output.id = 'make-it-red-json-output';
 		output.setAttribute('style', 'width: 100%; flex: 1; min-height: 200px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;');
 
-		importButton.addEventListener('command', async () => {
+		importButton.addEventListener('click', async () => {
 			importButton.disabled = true;
 			clearButton.disabled = true;
 			summaryLabel.setAttribute('value', 'Processing...');
@@ -138,13 +156,13 @@ MakeItRed = {
 			}
 		});
 
-		clearButton.addEventListener('command', () => {
+		clearButton.addEventListener('click', () => {
 			input.value = '';
 			output.innerHTML = '';
 			summaryLabel.setAttribute('value', 'Ready.');
 		});
 
-		closeButton.addEventListener('command', () => {
+		closeButton.addEventListener('click', () => {
 			panel.hidePopup();
 		});
 
@@ -161,42 +179,6 @@ MakeItRed = {
 			window.setTimeout(() => input.focus(), 0);
 		});
 
-		input.addEventListener('keydown', (event) => {
-			if (event.key === 'Escape') {
-				panel.hidePopup();
-				return;
-			}
-			event.stopPropagation();
-		});
-
-		collectionPathInput.addEventListener('keydown', (event) => {
-			if (event.key === 'Escape') {
-				panel.hidePopup();
-				return;
-			}
-			event.stopPropagation();
-		});
-
-		collectionPathInput.addEventListener('click', () => {
-			collectionPathInput.focus();
-		});
-
-		lockPathCheckbox.addEventListener('change', () => {
-			if (lockPathCheckbox.checked) {
-				return;
-			}
-			let selectedPath = this.getSelectedCollectionPath(window);
-			if (selectedPath) {
-				collectionPathInput.value = selectedPath;
-			}
-		});
-
-		output.addEventListener('keydown', (event) => {
-			if (event.key === 'Escape') {
-				panel.hidePopup();
-			}
-		});
-
 		vbox.appendChild(inputLabel);
 		vbox.appendChild(input);
 		vbox.appendChild(pathLabel);
@@ -210,6 +192,12 @@ MakeItRed = {
 		let popupSet = doc.getElementById('mainPopupSet') || doc.documentElement;
 		popupSet.appendChild(panel);
 		this.storeAddedElement(panel);
+
+		if (typeof this.addExportPanelToWindow === 'function') {
+			this.addExportPanelToWindow(window, toolbar, popupSet);
+		} else {
+			this.log('Export panel module not loaded');
+		}
 	},
 
 	findToolbarContainer(doc) {
@@ -357,50 +345,22 @@ MakeItRed = {
 			let jsonTitle = String(entry?.title || '').trim();
 
 			if (!doi) {
-				rows.push({
-					index,
-					success: false,
-					doi: '',
-					foundTitle: '',
-					jsonTitle,
-					error: 'Missing DOI'
-				});
+				rows.push({ index, success: false, doi: '', foundTitle: '', jsonTitle, error: 'Missing DOI' });
 				continue;
 			}
 
 			try {
 				let item = await this.findOrCreateByDOI(doi, targetCollection);
 				if (!item) {
-					rows.push({
-						index,
-						success: false,
-						doi,
-						foundTitle: '',
-						jsonTitle,
-						error: 'Identifier lookup failed or returned no item'
-					});
+					rows.push({ index, success: false, doi, foundTitle: '', jsonTitle, error: 'Identifier lookup failed or returned no item' });
 					continue;
 				}
 
 				await this.addItemToCollection(targetCollection, item.id);
-				rows.push({
-					index,
-					success: true,
-					doi,
-					foundTitle: item.getField('title') || '',
-					jsonTitle,
-					error: ''
-				});
+				rows.push({ index, success: true, doi, foundTitle: item.getField('title') || '', jsonTitle, error: '' });
 			}
 			catch (e) {
-				rows.push({
-					index,
-					success: false,
-					doi,
-					foundTitle: '',
-					jsonTitle,
-					error: String(e)
-				});
+				rows.push({ index, success: false, doi, foundTitle: '', jsonTitle, error: String(e) });
 			}
 		}
 
@@ -408,9 +368,7 @@ MakeItRed = {
 	},
 
 	async addItemToCollection(collection, itemID) {
-		if (!collection || itemID == null) {
-			throw new Error('Invalid collection or item');
-		}
+		if (!collection || itemID == null) throw new Error('Invalid collection or item');
 
 		let item = Zotero.Items.get(itemID);
 		if (!item) return;
@@ -425,7 +383,6 @@ MakeItRed = {
 
 	async findOrCreateByDOI(doi, targetCollection) {
 		let libraryID = targetCollection.libraryID;
-
 		let cleanDOI = Zotero.Utilities.cleanDOI(doi);
 		if (!cleanDOI) {
 			this.log(`Invalid DOI format: ${doi}`);
@@ -433,11 +390,8 @@ MakeItRed = {
 		}
 
 		let existing = await this.findExistingByDOI(cleanDOI, libraryID);
-		if (existing) {
-			return existing;
-		}
+		if (existing) return existing;
 
-		// 改进版的内部抓取函数
 		const fetchFromNetwork = async (identifier) => {
 			let translate = new Zotero.Translate.Search();
 			translate.setIdentifier(identifier);
@@ -448,51 +402,28 @@ MakeItRed = {
 			translate.setTranslator(translators[0]);
 
 			let newItems = [];
-			translate.setHandler('itemDone', (obj, item) => {
-				newItems.push(item);
-			});
+			translate.setHandler('itemDone', (obj, item) => newItems.push(item));
 
 			try {
-				// 正常情况下，translate() 返回的数组里装的是真正的 Zotero.Item 对象
-				let savedItems = await translate.translate({
-					libraryID: libraryID,
-					collections: [targetCollection.id]
-				});
-
-				if (savedItems && savedItems.length > 0) {
-					return savedItems[0];
-				}
-
-				// 极端情况防御：如果 savedItems 为空但 itemDone 触发了
-				if (newItems.length > 0 && newItems[0].id) {
-					return Zotero.Items.get(newItems[0].id);
-				}
-
+				let savedItems = await translate.translate({ libraryID: libraryID, collections: [targetCollection.id] });
+				if (savedItems && savedItems.length > 0) return savedItems[0];
+				if (newItems.length > 0 && newItems[0].id) return Zotero.Items.get(newItems[0].id);
 				return null;
 			}
 			catch (e) {
-				this.log(`Network lookup warning/error for ${JSON.stringify(identifier)}: ${e}`);
-
-				// 🌟 终极修复：通过数据库 ID 获取真正的 Zotero.Item 实例
 				if (newItems.length > 0 && newItems[0].id) {
-					this.log(`Recovered item ${newItems[0].id} despite translation error (likely PDF failure).`);
-					// Zotero.Items.get 返回的对象才真正拥有 getField 和 setField 方法！
 					return Zotero.Items.get(newItems[0].id);
 				}
-
 				return null;
 			}
 		};
 
-		// 1. Standard DOI search
 		let item = await fetchFromNetwork({ DOI: cleanDOI });
 		if (item) return item;
 
-		// 2. arXiv fallback
 		let arxivMatch = cleanDOI.match(/arxiv\.(.+)$/i);
 		if (arxivMatch) {
-			let arxivId = arxivMatch[1];
-			item = await fetchFromNetwork(`arXiv:${arxivId}`);
+			item = await fetchFromNetwork(`arXiv:${arxivMatch[1]}`);
 			if (item) {
 				if (!item.getField('DOI')) {
 					item.setField('DOI', cleanDOI);
@@ -502,7 +433,6 @@ MakeItRed = {
 			}
 		}
 
-		// 3. Final fallback
 		let fallbackItem = await fetchFromNetwork(`doi:${cleanDOI}`);
 		if (fallbackItem) return fallbackItem;
 
@@ -514,9 +444,7 @@ MakeItRed = {
 		search.libraryID = libraryID;
 		search.addCondition('DOI', 'is', doi);
 		let itemIDs = await search.search();
-		if (!itemIDs || !itemIDs.length) {
-			return null;
-		}
+		if (!itemIDs || !itemIDs.length) return null;
 		return Zotero.Items.get(itemIDs[0]);
 	},
 
@@ -547,23 +475,18 @@ MakeItRed = {
 		for (let row of rows) {
 			let statusColor = row.success ? '#2e7d32' : '#d32f2f';
 			let statusText = row.success ? '成功' : '失败';
-			let reason = row.error
-				? `<br/><span style="color: #d32f2f; font-size: 11px; font-weight: normal;">${this.escapeHTML(row.error)}</span>`
-				: '';
+			let reason = row.error ? `<br/><span style="color: #d32f2f; font-size: 11px; font-weight: normal;">${this.escapeHTML(row.error)}</span>` : '';
 
 			let matchResult = '';
 			if (row.success) {
 				let cleanFound = (row.foundTitle || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 				let cleanJson = (row.jsonTitle || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
 				if (cleanFound !== '' && cleanFound === cleanJson) {
 					matchResult = '<span style="color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 3px 6px; border-radius: 4px;">标题匹配</span>';
-				}
-				else {
+				} else {
 					matchResult = '<span style="color: #d32f2f; font-weight: bold; background: #ffebee; padding: 3px 6px; border-radius: 4px;">不匹配<br/><span style="font-size: 11px; font-weight: normal;">(疑似幻觉)</span></span>';
 				}
-			}
-			else {
+			} else {
 				matchResult = '<span style="color: #999;">-</span>';
 			}
 
@@ -591,9 +514,7 @@ MakeItRed = {
 	},
 
 	storeAddedElement(elem) {
-		if (!elem.id) {
-			throw new Error("Element must have an id");
-		}
+		if (!elem.id) throw new Error("Element must have an id");
 		this.addedElementIDs.push(elem.id);
 	},
 
@@ -613,7 +534,6 @@ MakeItRed = {
 	},
 
 	async main() {
-		// Global properties are included automatically in Zotero 7
 		var host = new URL('https://foo.com/path').host;
 		this.log(`Host is ${host}`);
 	},

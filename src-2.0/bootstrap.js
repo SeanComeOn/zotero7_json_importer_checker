@@ -12,6 +12,7 @@ async function startup({ id, version, rootURI }) {
 	log("Starting 2.0");
 
 	Services.scriptloader.loadSubScript(rootURI + 'make-it-red.js');
+	Services.scriptloader.loadSubScript(rootURI + 'make-it-red-export.js');
 	MakeItRed.init({ id, version, rootURI });
 	MakeItRed.addToAllWindows();
 	await MakeItRed.main();
