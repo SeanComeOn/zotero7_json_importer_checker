@@ -1,9 +1,9 @@
 {
 	"manifest_version": 2,
-	"name": "Make It Red",
+	"name": "LLM-Gen JSON DOIs Importer",
 	"version": "2.0",
-	"description": "Makes everything red",
-	"homepage_url": "https://github.com/zotero/make-it-red",
+	"description": "Batch import DOIs from LLM-generated JSON and visually detect title hallucinations.",
+	"homepage_url": "https://github.com/SeanComeOn/zotero7_json_importer_checker",
 	"applications": {
 		"zotero": {
 			"id": "make-it-red@example.com",
