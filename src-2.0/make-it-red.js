@@ -548,8 +548,5 @@ MakeItRed = {
 		// Global properties are included automatically in Zotero 7
 		var host = new URL('https://foo.com/path').host;
 		this.log(`Host is ${host}`);
-
-		// Retrieve a global pref
-		this.log(`Intensity is ${Zotero.Prefs.get('extensions.make-it-red.intensity', true)}`);
 	},
 };
