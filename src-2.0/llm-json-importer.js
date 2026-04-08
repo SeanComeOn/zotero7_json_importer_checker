@@ -1,4 +1,4 @@
-LlmJsonImporter = {
+MakeItRed = {
 	id: null,
 	version: null,
 	rootURI: null,
@@ -14,7 +14,7 @@ LlmJsonImporter = {
 	},
 
 	log(msg) {
-		Zotero.debug("LLM JSON Importer: " + msg);
+		Zotero.debug("Make It Red: " + msg);
 	},
 
 	addToWindow(window) {
@@ -26,15 +26,15 @@ LlmJsonImporter = {
 		}
 
 		let button = doc.createXULElement('toolbarbutton');
-		button.id = 'llm-json-importer-toolbar-button';
-		button.setAttribute('label', 'LLM JSON Importer');
-		button.setAttribute('tooltiptext', 'Open LLM-Gen JSON DOIs Importer');
+		button.id = 'make-it-red-json-toolbar-button';
+		button.setAttribute('label', 'JSON Echo');
+		button.setAttribute('tooltiptext', 'Open JSON echo panel');
 		button.setAttribute('class', 'toolbarbutton-1');
 		toolbar.appendChild(button);
 		this.storeAddedElement(button);
 
 		let panel = doc.createXULElement('panel');
-		panel.id = 'llm-json-importer-panel';
+		panel.id = 'make-it-red-json-panel';
 		panel.setAttribute('type', 'arrow');
 		panel.setAttribute('orient', 'vertical');
 		panel.setAttribute('style', 'padding: 15px; width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-sizing: border-box;');
@@ -47,7 +47,7 @@ LlmJsonImporter = {
 		inputLabel.setAttribute('value', 'Input JSON string (array of paper entries):');
 
 		let input = doc.createElementNS('http://www.w3.org/1999/xhtml', 'textarea');
-		input.id = 'llm-json-importer-input';
+		input.id = 'make-it-red-json-input';
 		input.setAttribute('rows', '5');
 		input.setAttribute('style', 'width: 100%; box-sizing: border-box; font-family: monospace; resize: vertical; min-height: 80px;');
 
@@ -55,7 +55,7 @@ LlmJsonImporter = {
 		pathLabel.setAttribute('value', 'Target collection path (example: My Library/Robot/Locomotion):');
 
 		let collectionPathInput = doc.createElementNS('http://www.w3.org/1999/xhtml', 'input');
-		collectionPathInput.id = 'llm-json-importer-collection-path';
+		collectionPathInput.id = 'make-it-red-collection-path';
 		collectionPathInput.setAttribute('type', 'text');
 		collectionPathInput.setAttribute('placeholder', 'Leave empty to use currently selected collection');
 		collectionPathInput.setAttribute('style', 'width: 100%; box-sizing: border-box; padding: 4px;');
@@ -77,14 +77,14 @@ LlmJsonImporter = {
 		actions.appendChild(closeButton);
 
 		let summaryLabel = doc.createXULElement('label');
-		summaryLabel.id = 'llm-json-importer-summary';
+		summaryLabel.id = 'make-it-red-summary';
 		summaryLabel.setAttribute('value', 'Ready.');
 
 		let outputLabel = doc.createXULElement('label');
 		outputLabel.setAttribute('value', 'Validation list (Table view):');
 
 		let output = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
-		output.id = 'llm-json-importer-output';
+		output.id = 'make-it-red-json-output';
 		output.setAttribute('style', 'width: 100%; flex: 1; min-height: 200px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;');
 
 		importButton.addEventListener('command', async () => {
