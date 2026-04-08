@@ -1,0 +1,37 @@
+[
+    {
+        "title": "BeyondMimic: From Motion Tracking to Versatile Humanoid Control via Guided Diffusion",
+        "introduction": "该研究提出了一个结合大规模物理动作跟踪（强化学习）和引导扩散模型（Diffusion Model）的框架。它使得人形机器人能够在不需要传统显式运动学重定向的情况下，高保真地模仿复杂的人类动态动作（如跳舞、跑酷），并能实现零样本的下游任务通用控制。",
+        "doi": "10.48550/arXiv.2508.08241"
+    },
+    {
+        "title": "RMA: Rapid Motor Adaptation for Legged Robots",
+        "introduction": "盲视越野领域的开山之作。提出了一种通过机器人的历史动作和本体感知序列，隐式预测低维“外部环境向量”（如地面摩擦力、负载质量）的方法。该方法使四足机器人能够仅靠本体感觉在沙地、泥地等复杂地形中自适应稳定行走。",
+        "doi": "10.15607/RSS.2021.XVII.011"
+    },
+    {
+        "title": "Blind Bipedal Stair Traversal via Sim-to-Real Reinforcement Learning",
+        "introduction": "展示了双足机器人（Cassie）如何在没有任何视觉感知的情况下“盲爬”楼梯。核心在于使用循环神经网络（RNN/LSTM）处理历史感知序列，让网络利用内部记忆状态在线辨识台阶边缘等地形特征。",
+        "doi": "10.15607/RSS.2021.XVII.014"
+    },
+    {
+        "title": "Learning robust perceptive locomotion for quadrupedal robots in the wild",
+        "introduction": "针对 ANYmal 四足机器人在野外恶劣地形（如起伏山地、积水坑道）的研究。论文提出，在视觉系统因环境因素失效时，利用基于注意力的循环编码器处理本体感知历史，让机器人依靠“脚感”继续鲁棒前行。",
+        "doi": "10.1126/scirobotics.abk2822"
+    },
+    {
+        "title": "Walk These Ways: Tuning Robot Control for Generalization with Multiplicity of Behavior",
+        "introduction": "动态步态控制的代表作。该框架不再让网络自行猜测步频，而是将步频（Frequency）、触地比例（Duty Factor）等参数作为显式指令输入给强化学习网络。这样可以根据不同的速度或操作需求，人为或由高层规划器动态调整机器人的步态行为。",
+        "doi": "10.48550/arXiv.2212.03238"
+    },
+    {
+        "title": "Learning to walk in minutes using massively parallel deep reinforcement learning",
+        "introduction": "基于大规模并行仿真训练的强化学习框架。该研究展示了如何通过物理限制（如关节加速度、力矩和动作平滑度的惩罚）让机器人在数分钟内自发“涌现”出自然的步态，在高速时自动提高步频并从走切换到跑。",
+        "doi": "10.48550/arXiv.2109.11978"
+    },
+    {
+        "title": "Learning agile and dynamic motor skills for legged robots",
+        "introduction": "步态自发涌现的经典之作。研究团队提出了一种端到端的深度强化学习方法，通过训练高精度的执行器（电机）网络模型来弥合 Sim-to-Real 差距，使得 ANYmal 机器人能够学习到极其敏捷、动态的自主运动技能和从跌倒中恢复的能力。",
+        "doi": "10.1126/scirobotics.aau5872"
+    }
+]
