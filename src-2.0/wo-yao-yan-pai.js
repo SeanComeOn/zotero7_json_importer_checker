@@ -27,14 +27,14 @@ MakeItRed = {
 		}
 
 		let style = doc.createElementNS('http://www.w3.org/1999/xhtml', 'style');
-		style.id = 'make-it-red-json-toolbar-button-style';
+		style.id = 'wo-yao-yan-pai-json-toolbar-button-style';
 		style.textContent = `
-			#make-it-red-json-toolbar-button .toolbarbutton-icon,
-			#make-it-red-export-toolbar-button .toolbarbutton-icon {
+			#wo-yao-yan-pai-json-toolbar-button .toolbarbutton-icon,
+			#wo-yao-yan-pai-export-toolbar-button .toolbarbutton-icon {
 				width: 16px !important;
 				height: 16px !important;
 			}
-			.make-it-red-html-btn {
+			.wo-yao-yan-pai-html-btn {
 				padding: 4px 10px;
 				cursor: pointer;
 				background-color: #f0f0f0;
@@ -42,7 +42,7 @@ MakeItRed = {
 				border-radius: 4px;
 				font-family: inherit;
 			}
-			.make-it-red-html-btn:hover {
+			.wo-yao-yan-pai-html-btn:hover {
 				background-color: #e0e0e0;
 			}
 		`;
@@ -53,7 +53,7 @@ MakeItRed = {
 		// 1. 原有的 JSON 导入功能区
 		// ==========================================
 		let button = doc.createXULElement('toolbarbutton');
-		button.id = 'make-it-red-json-toolbar-button';
+		button.id = 'wo-yao-yan-pai-json-toolbar-button';
 		button.setAttribute('label', 'JSON Echo');
 		button.setAttribute('tooltiptext', 'Open JSON echo panel');
 		button.setAttribute('class', 'toolbarbutton-1');
@@ -62,7 +62,7 @@ MakeItRed = {
 		this.storeAddedElement(button);
 
 		let panel = doc.createXULElement('panel');
-		panel.id = 'make-it-red-json-panel';
+		panel.id = 'wo-yao-yan-pai-json-panel';
 		panel.setAttribute('type', 'arrow');
 		panel.setAttribute('orient', 'vertical');
 		panel.setAttribute('style', 'padding: 15px; width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-sizing: border-box;');
@@ -75,7 +75,7 @@ MakeItRed = {
 		inputLabel.setAttribute('value', 'Input JSON string (array of paper entries):');
 
 		let input = doc.createElementNS('http://www.w3.org/1999/xhtml', 'textarea');
-		input.id = 'make-it-red-json-input';
+		input.id = 'wo-yao-yan-pai-json-input';
 		input.setAttribute('rows', '5');
 		input.setAttribute('style', 'width: 100%; box-sizing: border-box; font-family: monospace; resize: vertical; min-height: 80px;');
 
@@ -83,19 +83,19 @@ MakeItRed = {
 		pathLabel.setAttribute('value', 'Target collection path (example: My Library/Robot/Locomotion):');
 
 		let collectionPathInput = doc.createElementNS('http://www.w3.org/1999/xhtml', 'input');
-		collectionPathInput.id = 'make-it-red-collection-path';
+		collectionPathInput.id = 'wo-yao-yan-pai-collection-path';
 		collectionPathInput.setAttribute('type', 'text');
 		collectionPathInput.setAttribute('placeholder', 'Auto-filled from currently selected collection');
 		collectionPathInput.setAttribute('style', 'width: 100%; box-sizing: border-box; padding: 4px;');
 
 		let lockPathCheckbox = doc.createElementNS('http://www.w3.org/1999/xhtml', 'input');
-		lockPathCheckbox.id = 'make-it-red-lock-collection-path';
+		lockPathCheckbox.id = 'wo-yao-yan-pai-lock-collection-path';
 		lockPathCheckbox.setAttribute('type', 'checkbox');
 		lockPathCheckbox.title = 'Lock target collection path';
 
 		let lockPathLabel = doc.createXULElement('label');
 		lockPathLabel.setAttribute('value', 'Lock');
-		lockPathLabel.setAttribute('control', 'make-it-red-lock-collection-path');
+		lockPathLabel.setAttribute('control', 'wo-yao-yan-pai-lock-collection-path');
 
 		let pathRow = doc.createXULElement('hbox');
 		pathRow.setAttribute('style', 'gap: 8px; align-items: center;');
@@ -108,15 +108,15 @@ MakeItRed = {
 		actions.setAttribute('style', 'gap: 8px;');
 
 		let importButton = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
-		importButton.className = 'make-it-red-html-btn';
+		importButton.className = 'wo-yao-yan-pai-html-btn';
 		importButton.textContent = 'Import by DOI';
 
 		let clearButton = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
-		clearButton.className = 'make-it-red-html-btn';
+		clearButton.className = 'wo-yao-yan-pai-html-btn';
 		clearButton.textContent = 'Clear';
 
 		let closeButton = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
-		closeButton.className = 'make-it-red-html-btn';
+		closeButton.className = 'wo-yao-yan-pai-html-btn';
 		closeButton.textContent = 'Close';
 
 		actions.appendChild(importButton);
@@ -124,14 +124,14 @@ MakeItRed = {
 		actions.appendChild(closeButton);
 
 		let summaryLabel = doc.createXULElement('label');
-		summaryLabel.id = 'make-it-red-summary';
+		summaryLabel.id = 'wo-yao-yan-pai-summary';
 		summaryLabel.setAttribute('value', 'Ready.');
 
 		let outputLabel = doc.createXULElement('label');
 		outputLabel.setAttribute('value', 'Validation list (Table view):');
 
 		let output = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
-		output.id = 'make-it-red-json-output';
+		output.id = 'wo-yao-yan-pai-json-output';
 		output.setAttribute('style', 'width: 100%; flex: 1; min-height: 200px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;');
 
 		importButton.addEventListener('click', async () => {

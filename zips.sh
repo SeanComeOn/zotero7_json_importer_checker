@@ -1,2 +1,3 @@
-rm json-importer.xpi
-cd src-2.0 && zip -r ../json-importer.xpi * && cd ..
+#!/bin/bash
+rm -f wo-yao-yan-pai.xpi
+(cd src-2.0 && zip -r ../wo-yao-yan-pai.xpi *)

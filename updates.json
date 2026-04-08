@@ -1,0 +1,12 @@
+{
+  "addons": {
+    "wo-yao-yan-pai@fish.com": {
+      "updates": [
+        {
+          "version": "2.0.0",
+          "update_link": "https://github.com/SeanComeOn/zotero7_json_importer_checker/releases/download/v2.0.0/wo-yao-yan-pai.xpi"
+        }
+      ]
+    }
+  }
+}

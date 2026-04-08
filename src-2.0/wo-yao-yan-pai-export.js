@@ -3,7 +3,7 @@ Object.assign(MakeItRed, {
         let doc = window.document;
 
         let exportButton = doc.createXULElement('toolbarbutton');
-        exportButton.id = 'make-it-red-export-toolbar-button';
+        exportButton.id = 'wo-yao-yan-pai-export-toolbar-button';
         exportButton.setAttribute('label', 'Export PDFs');
         exportButton.setAttribute('tooltiptext', 'Open PDF Export panel');
         exportButton.setAttribute('class', 'toolbarbutton-1');
@@ -12,7 +12,7 @@ Object.assign(MakeItRed, {
         this.storeAddedElement(exportButton);
 
         let exportPanel = doc.createXULElement('panel');
-        exportPanel.id = 'make-it-red-export-panel';
+        exportPanel.id = 'wo-yao-yan-pai-export-panel';
         exportPanel.setAttribute('type', 'arrow');
         exportPanel.setAttribute('orient', 'vertical');
         exportPanel.setAttribute('style', 'padding: 15px; width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-sizing: border-box;');
@@ -28,7 +28,7 @@ Object.assign(MakeItRed, {
         exPathRow.setAttribute('style', 'gap: 8px; align-items: center;');
 
         let exPathInput = doc.createElementNS('http://www.w3.org/1999/xhtml', 'input');
-        exPathInput.id = 'make-it-red-export-path';
+        exPathInput.id = 'wo-yao-yan-pai-export-path';
         exPathInput.setAttribute('type', 'text');
         exPathInput.setAttribute('placeholder', 'Select export folder...');
         exPathInput.setAttribute('style', 'flex: 1; box-sizing: border-box; padding: 4px;');
@@ -39,7 +39,7 @@ Object.assign(MakeItRed, {
         });
 
         let exBrowseBtn = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
-        exBrowseBtn.className = 'make-it-red-html-btn';
+        exBrowseBtn.className = 'wo-yao-yan-pai-html-btn';
         exBrowseBtn.textContent = 'Browse...';
 
         exBrowseBtn.addEventListener('click', async () => {
@@ -63,15 +63,15 @@ Object.assign(MakeItRed, {
         exActions.setAttribute('style', 'gap: 8px;');
 
         let selectAllBtn = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
-        selectAllBtn.className = 'make-it-red-html-btn';
+        selectAllBtn.className = 'wo-yao-yan-pai-html-btn';
         selectAllBtn.textContent = 'Select All';
 
         let deselectAllBtn = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
-        deselectAllBtn.className = 'make-it-red-html-btn';
+        deselectAllBtn.className = 'wo-yao-yan-pai-html-btn';
         deselectAllBtn.textContent = 'Deselect All';
 
         let doExportBtn = doc.createElementNS('http://www.w3.org/1999/xhtml', 'button');
-        doExportBtn.className = 'make-it-red-html-btn';
+        doExportBtn.className = 'wo-yao-yan-pai-html-btn';
         doExportBtn.textContent = 'Export Selected PDFs';
 
         exActions.appendChild(selectAllBtn);
@@ -82,16 +82,16 @@ Object.assign(MakeItRed, {
         exStatus.setAttribute('value', 'Ready.');
 
         let exOutput = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
-        exOutput.id = 'make-it-red-export-output';
+        exOutput.id = 'wo-yao-yan-pai-export-output';
         exOutput.setAttribute('style', 'width: 100%; flex: 1; min-height: 300px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;');
 
         selectAllBtn.addEventListener('click', () => {
-            let checkboxes = exOutput.querySelectorAll('.make-it-red-export-checkbox:not(:disabled)');
+            let checkboxes = exOutput.querySelectorAll('.wo-yao-yan-pai-export-checkbox:not(:disabled)');
             checkboxes.forEach(cb => cb.checked = true);
         });
 
         deselectAllBtn.addEventListener('click', () => {
-            let checkboxes = exOutput.querySelectorAll('.make-it-red-export-checkbox');
+            let checkboxes = exOutput.querySelectorAll('.wo-yao-yan-pai-export-checkbox');
             checkboxes.forEach(cb => cb.checked = false);
         });
 
@@ -123,7 +123,7 @@ Object.assign(MakeItRed, {
                 return;
             }
 
-            let checkboxes = exOutput.querySelectorAll('.make-it-red-export-checkbox:checked');
+            let checkboxes = exOutput.querySelectorAll('.wo-yao-yan-pai-export-checkbox:checked');
             if (checkboxes.length === 0) {
                 exStatus.setAttribute('value', 'No items selected for export.');
                 return;
@@ -285,7 +285,7 @@ Object.assign(MakeItRed, {
 
                     let checkbox = doc.createElementNS('http://www.w3.org/1999/xhtml', 'input');
                     checkbox.setAttribute('type', 'checkbox');
-                    checkbox.setAttribute('class', 'make-it-red-export-checkbox');
+                    checkbox.setAttribute('class', 'wo-yao-yan-pai-export-checkbox');
                     checkbox.setAttribute('value', String(entry.attachmentID));
                     checkbox.checked = true;
                     checkboxCell.appendChild(checkbox);
