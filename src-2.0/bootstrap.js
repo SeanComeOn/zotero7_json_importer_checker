@@ -1,36 +1,37 @@
-var MakeItRed;
+var LlmJsonImporter;
 
 function log(msg) {
-	Zotero.debug("Make It Red: " + msg);
+	Zotero.debug("LLM JSON Importer: " + msg);
 }
 
 function install() {
-	log("Installed 2.0");
+	log("Installed 1.0.0");
 }
 
 async function startup({ id, version, rootURI }) {
-	log("Starting 2.0");
+	log("Starting 1.0.0");
 
-	Services.scriptloader.loadSubScript(rootURI + 'make-it-red.js');
-	MakeItRed.init({ id, version, rootURI });
-	MakeItRed.addToAllWindows();
-	await MakeItRed.main();
+	// 注意这里加载的是重命名后的新文件
+	Services.scriptloader.loadSubScript(rootURI + 'llm-json-importer.js');
+	LlmJsonImporter.init({ id, version, rootURI });
+	LlmJsonImporter.addToAllWindows();
+	await LlmJsonImporter.main();
 }
 
 function onMainWindowLoad({ window }) {
-	MakeItRed.addToWindow(window);
+	LlmJsonImporter.addToWindow(window);
 }
 
 function onMainWindowUnload({ window }) {
-	MakeItRed.removeFromWindow(window);
+	LlmJsonImporter.removeFromWindow(window);
 }
 
 function shutdown() {
-	log("Shutting down 2.0");
-	MakeItRed.removeFromAllWindows();
-	MakeItRed = undefined;
+	log("Shutting down");
+	LlmJsonImporter.removeFromAllWindows();
+	LlmJsonImporter = undefined;
 }
 
 function uninstall() {
-	log("Uninstalled 2.0");
+	log("Uninstalled");
 }
