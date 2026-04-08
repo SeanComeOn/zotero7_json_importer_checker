@@ -371,7 +371,7 @@ MakeItRed = {
 			return existing;
 		}
 
-		// Improved internal fetch function
+		// 改进版的内部抓取函数
 		const fetchFromNetwork = async (identifier) => {
 			let translate = new Zotero.Translate.Search();
 			translate.setIdentifier(identifier);
@@ -382,26 +382,36 @@ MakeItRed = {
 			translate.setTranslator(translators[0]);
 
 			let newItems = [];
-			// Once metadata is fetched, Zotero will trigger this immediately
 			translate.setHandler('itemDone', (obj, item) => {
 				newItems.push(item);
 			});
 
 			try {
-				await translate.translate({
+				// 正常情况下，translate() 返回的数组里装的是真正的 Zotero.Item 对象
+				let savedItems = await translate.translate({
 					libraryID: libraryID,
 					collections: [targetCollection.id]
 				});
-				return newItems.length > 0 ? newItems[0] : null;
+
+				if (savedItems && savedItems.length > 0) {
+					return savedItems[0];
+				}
+
+				// 极端情况防御：如果 savedItems 为空但 itemDone 触发了
+				if (newItems.length > 0 && newItems[0].id) {
+					return Zotero.Items.get(newItems[0].id);
+				}
+
+				return null;
 			}
 			catch (e) {
 				this.log(`Network lookup warning/error for ${JSON.stringify(identifier)}: ${e}`);
 
-				// If translator throws (for example, arXiv PDF download failure),
-				// but itemDone already produced a persisted item, treat as success.
+				// 🌟 终极修复：通过数据库 ID 获取真正的 Zotero.Item 实例
 				if (newItems.length > 0 && newItems[0].id) {
 					this.log(`Recovered item ${newItems[0].id} despite translation error (likely PDF failure).`);
-					return newItems[0];
+					// Zotero.Items.get 返回的对象才真正拥有 getField 和 setField 方法！
+					return Zotero.Items.get(newItems[0].id);
 				}
 
 				return null;
