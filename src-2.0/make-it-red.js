@@ -303,7 +303,7 @@ MakeItRed = {
 			}
 
 			try {
-				let item = await this.findOrCreateByDOI(doi, targetCollection.libraryID);
+				let item = await this.findOrCreateByDOI(doi, targetCollection);
 				if (!item) {
 					rows.push({
 						index,
@@ -311,7 +311,7 @@ MakeItRed = {
 						doi,
 						foundTitle: '',
 						jsonTitle,
-						error: 'Identifier lookup failed'
+						error: 'Identifier lookup failed or returned no item'
 					});
 					continue;
 				}
@@ -346,51 +346,89 @@ MakeItRed = {
 			throw new Error('Invalid collection or item');
 		}
 
-		if (typeof collection.hasItem === 'function' && collection.hasItem(itemID)) {
-			return;
-		}
+		let item = Zotero.Items.get(itemID);
+		if (!item) return;
 
-		if (typeof Zotero.DB?.executeTransaction === 'function') {
-			await Zotero.DB.executeTransaction(async () => {
-				await collection.addItem(itemID);
-			});
-			return;
+		let colIDs = item.getCollections();
+		if (!colIDs.includes(collection.id)) {
+			colIDs.push(collection.id);
+			item.setCollections(colIDs);
+			await item.saveTx();
 		}
-
-		await collection.addItem(itemID);
 	},
 
-	async findOrCreateByDOI(doi, libraryID) {
-		let existing = await this.findExistingByDOI(doi, libraryID);
-		if (existing) return existing;
+	async findOrCreateByDOI(doi, targetCollection) {
+		let libraryID = targetCollection.libraryID;
 
-		let forms = [
-			doi,
-			`doi:${doi}`,
-			{ DOI: doi }
-		];
+		let cleanDOI = Zotero.Utilities.cleanDOI(doi);
+		if (!cleanDOI) {
+			this.log(`Invalid DOI format: ${doi}`);
+			return null;
+		}
 
-		for (let form of forms) {
+		let existing = await this.findExistingByDOI(cleanDOI, libraryID);
+		if (existing) {
+			return existing;
+		}
+
+		// Improved internal fetch function
+		const fetchFromNetwork = async (identifier) => {
 			let translate = new Zotero.Translate.Search();
-			try {
-				translate.setIdentifier(form);
-				let translators = await translate.getTranslators();
-				if (!translators || !translators.length) {
-					continue;
-				}
+			translate.setIdentifier(identifier);
 
-				translate.setTranslator(translators);
-				await translate.translate({ libraryID });
+			let translators = await translate.getTranslators();
+			if (!translators || translators.length === 0) return null;
+
+			translate.setTranslator(translators[0]);
+
+			let newItems = [];
+			// Once metadata is fetched, Zotero will trigger this immediately
+			translate.setHandler('itemDone', (obj, item) => {
+				newItems.push(item);
+			});
+
+			try {
+				await translate.translate({
+					libraryID: libraryID,
+					collections: [targetCollection.id]
+				});
+				return newItems.length > 0 ? newItems[0] : null;
 			}
 			catch (e) {
-				this.log(`Translate failed for DOI ${doi} with form ${JSON.stringify(form)}: ${e}`);
-			}
+				this.log(`Network lookup warning/error for ${JSON.stringify(identifier)}: ${e}`);
 
-			existing = await this.findExistingByDOI(doi, libraryID);
-			if (existing) {
-				return existing;
+				// If translator throws (for example, arXiv PDF download failure),
+				// but itemDone already produced a persisted item, treat as success.
+				if (newItems.length > 0 && newItems[0].id) {
+					this.log(`Recovered item ${newItems[0].id} despite translation error (likely PDF failure).`);
+					return newItems[0];
+				}
+
+				return null;
+			}
+		};
+
+		// 1. Standard DOI search
+		let item = await fetchFromNetwork({ DOI: cleanDOI });
+		if (item) return item;
+
+		// 2. arXiv fallback
+		let arxivMatch = cleanDOI.match(/arxiv\.(.+)$/i);
+		if (arxivMatch) {
+			let arxivId = arxivMatch[1];
+			item = await fetchFromNetwork(`arXiv:${arxivId}`);
+			if (item) {
+				if (!item.getField('DOI')) {
+					item.setField('DOI', cleanDOI);
+					await item.saveTx();
+				}
+				return item;
 			}
 		}
+
+		// 3. Final fallback
+		let fallbackItem = await fetchFromNetwork(`doi:${cleanDOI}`);
+		if (fallbackItem) return fallbackItem;
 
 		return null;
 	},
