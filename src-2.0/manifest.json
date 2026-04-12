@@ -5,15 +5,15 @@
 	"description": "Batch import DOIs from LLM-generated JSON and visually detect title hallucinations.",
 	"homepage_url": "https://github.com/SeanComeOn/zotero7_json_importer_checker",
 	"icons": {
-		"32": "icon.png",
-		"48": "icon.png",
-		"64": "icon.png",
-		"128": "icon.png"
+		"32": "icons/icon.png",
+		"48": "icons/icon.png",
+		"64": "icons/icon.png",
+		"128": "icons/icon.png"
 	},
 	"applications": {
 		"zotero": {
 			"id": "wo-yao-yan-pai@fish.com",
-			"update_url": "https://raw.githubusercontent.com/Tiena-Li/Tiena-Li/refs/heads/main/updates.json",
+			"update_url": "https://seancomeon.github.io/zotero7_json_importer_checker/updates.json",
 			"strict_min_version": "7.0",
 			"strict_max_version": "7.1.*"
 		}

@@ -206,6 +206,50 @@ MakeItRed = {
 			|| doc.getElementById('nav-bar');
 	},
 
+	normalizePath(text) {
+		return String(text || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+	},
+
+	getCollectionByIDCompat(collectionID, byID) {
+		if (collectionID == null) return null;
+		if (byID?.has(collectionID)) {
+			return byID.get(collectionID);
+		}
+
+		if (typeof Zotero.Collections?.get === 'function') {
+			try {
+				let col = Zotero.Collections.get(collectionID);
+				if (col) {
+					if (byID) byID.set(col.id, col);
+					return col;
+				}
+			}
+			catch (e) {
+				this.log(`Collections.get failed for ${collectionID}: ${e}`);
+			}
+		}
+
+		return null;
+	},
+
+	getCollectionPathNames(collection, byID) {
+		if (!collection) return [];
+
+		let names = [];
+		let current = collection;
+		let guard = 0;
+		while (current && guard < 100) {
+			guard++;
+			if (current.name) names.unshift(current.name);
+
+			let parentID = current.parentID;
+			if (!parentID) break;
+			current = this.getCollectionByIDCompat(parentID, byID);
+		}
+
+		return names;
+	},
+
 	resolveTargetCollection(window, pathText) {
 		let trimmed = (pathText || '').trim();
 		if (!trimmed) {
@@ -216,7 +260,7 @@ MakeItRed = {
 			return selected;
 		}
 
-		let normalizedPath = trimmed.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+		let normalizedPath = this.normalizePath(trimmed);
 		let collections = this.getAllCollectionsCompat();
 		if (!collections.length) {
 			throw new Error('Unable to enumerate collections in this Zotero version. Please select a collection in the left pane and leave path empty.');
@@ -226,26 +270,52 @@ MakeItRed = {
 			byID.set(col.id, col);
 		}
 
-		let normalize = (s) => (s || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
-		let targetNorm = normalize(normalizedPath).toLowerCase();
+		let targetNorm = this.normalizePath(normalizedPath).toLowerCase();
+		let targetParts = targetNorm.split('/').filter(Boolean);
+		let candidateRows = [];
 
 		for (let col of collections) {
-			let names = [col.name];
-			let parentID = col.parentID;
-			while (parentID) {
-				let parent = byID.get(parentID);
-				if (!parent) break;
-				names.unshift(parent.name);
-				parentID = parent.parentID;
-			}
+			let names = this.getCollectionPathNames(col, byID);
 
-			let relPath = normalize(names.join('/'));
+			let relPath = this.normalizePath(names.join('/'));
+			let relPathNorm = relPath.toLowerCase();
+			let relParts = relPathNorm.split('/').filter(Boolean);
 			let libName = Zotero.Libraries.getName(col.libraryID);
-			let absPath = normalize(`${libName}/${relPath}`);
+			let absPath = this.normalizePath(`${libName}/${relPath}`);
+			let absPathNorm = absPath.toLowerCase();
 
-			if (relPath.toLowerCase() === targetNorm || absPath.toLowerCase() === targetNorm) {
+			if (relPathNorm === targetNorm || absPathNorm === targetNorm) {
 				return col;
 			}
+
+			candidateRows.push({ col, relParts, relPathNorm, absPathNorm, relPath });
+		}
+
+		// Fallback: allow matching by suffix when users provide partial hierarchical paths
+		let candidateTailParts = [targetParts];
+		if (targetParts.length > 1) {
+			candidateTailParts.push(targetParts.slice(1));
+		}
+
+		let fallbackMatches = [];
+		for (let row of candidateRows) {
+			for (let tailParts of candidateTailParts) {
+				if (!tailParts.length || row.relParts.length < tailParts.length) continue;
+				let suffix = row.relParts.slice(row.relParts.length - tailParts.length).join('/');
+				if (suffix === tailParts.join('/')) {
+					fallbackMatches.push(row);
+					break;
+				}
+			}
+		}
+
+		if (fallbackMatches.length === 1) {
+			return fallbackMatches[0].col;
+		}
+
+		if (fallbackMatches.length > 1) {
+			let preview = fallbackMatches.slice(0, 3).map(row => row.relPath).join(' | ');
+			throw new Error(`Collection path is ambiguous: ${trimmed}. Matches: ${preview}`);
 		}
 
 		throw new Error(`Collection path not found: ${trimmed}`);
@@ -263,14 +333,7 @@ MakeItRed = {
 			byID.set(col.id, col);
 		}
 
-		let names = [selected.name];
-		let parentID = selected.parentID;
-		while (parentID) {
-			let parent = byID.get(parentID);
-			if (!parent) break;
-			names.unshift(parent.name);
-			parentID = parent.parentID;
-		}
+		let names = this.getCollectionPathNames(selected, byID);
 
 		let libName = Zotero.Libraries.getName(selected.libraryID) || '';
 		return libName ? `${libName}/${names.join('/')}` : names.join('/');
@@ -306,6 +369,30 @@ MakeItRed = {
 				}
 				for (let col of cols) {
 					add(col);
+				}
+
+				// Some Zotero versions return only top-level collections here.
+				let queue = [...cols];
+				while (queue.length) {
+					let current = queue.shift();
+					if (!current) continue;
+
+					let children = [];
+					if (typeof current.getChildCollections === 'function') {
+						try {
+							children = current.getChildCollections() || [];
+						}
+						catch (e) {
+							this.log(`getChildCollections failed for ${current.id}: ${e}`);
+						}
+					}
+
+					for (let child of children) {
+						if (child && !seen.has(child.id)) {
+							add(child);
+							queue.push(child);
+						}
+					}
 				}
 			}
 		}
