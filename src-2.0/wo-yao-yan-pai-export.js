@@ -7,7 +7,7 @@ Object.assign(MakeItRed, {
         exportButton.setAttribute('label', 'Export PDFs');
         exportButton.setAttribute('tooltiptext', 'Open PDF Export panel');
         exportButton.setAttribute('class', 'toolbarbutton-1');
-        exportButton.setAttribute('image', this.rootURI + 'icons/pierkesong.png');
+        exportButton.setAttribute('image', this.rootURI + 'icons/icon.png');
         toolbar.appendChild(exportButton);
         this.storeAddedElement(exportButton);
 

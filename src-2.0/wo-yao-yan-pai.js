@@ -57,7 +57,7 @@ MakeItRed = {
 		button.setAttribute('label', 'JSON Echo');
 		button.setAttribute('tooltiptext', 'Open JSON echo panel');
 		button.setAttribute('class', 'toolbarbutton-1');
-		button.setAttribute('image', this.rootURI + 'icon.png');
+		button.setAttribute('image', this.rootURI + 'icons/pierkesong.png');
 		toolbar.appendChild(button);
 		this.storeAddedElement(button);
 

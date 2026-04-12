@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "LLM-Gen JSON DOIs Importer",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"description": "Batch import DOIs from LLM-generated JSON and visually detect title hallucinations.",
 	"homepage_url": "https://github.com/SeanComeOn/zotero7_json_importer_checker",
 	"icons": {
